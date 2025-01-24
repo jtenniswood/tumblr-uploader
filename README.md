@@ -4,21 +4,17 @@ This is an uploader for Tumblr, it monitors category based folder, uploads them 
 
 ## Authorize
 
-#### Install pip
-`sudo apt install python3-pip`
-
-#### Install oauth
-`pip install requests requests-oauthlib`
-
-#### Run the script
-`python3 oauth.py`
+#### Authorize
+docker run -it --rm \
+    -e CONSUMER_KEY="YOUR_TUMBLR_CONSUMER_KEY" \
+    -e CONSUMER_SECRET="YOUR_TUMBLR_CONSUMER_SECRET" \
+    jtenniswood/tumblr-oauth:latest
 
 #### Paste response
-Copy the verifier part of the URL, removing the final #=
+*Copy the verifier part of the URL, removing the final #=*
+http://localhost:8080/?oauth_token=XXXXXX&oauth_verifier=YYYYYY
 
-`http://localhost:8080/?oauth_token=XXXXXX&oauth_verifier=YYYYYY`
-
-Then copy the oauth key and secrets, you’ll need this for the container to work
+*Then copy the oauth key and secrets, you’ll need this for the container to work*
 
 
 ## Run

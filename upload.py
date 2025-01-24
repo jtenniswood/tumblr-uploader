@@ -12,30 +12,29 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # -------------------------------------
 # 1. Tumblr Credentials (Environment Variables)
 # -------------------------------------
-CONSUMER_KEY = os.environ.get("CONSUMER_KEY", "")
+CONSUMER_KEY    = os.environ.get("CONSUMER_KEY", "")
 CONSUMER_SECRET = os.environ.get("CONSUMER_SECRET", "")
-OAUTH_TOKEN = os.environ.get("OAUTH_TOKEN", "")
-OAUTH_SECRET = os.environ.get("OAUTH_SECRET", "")
+OAUTH_TOKEN     = os.environ.get("OAUTH_TOKEN", "")
+OAUTH_SECRET    = os.environ.get("OAUTH_SECRET", "")
 
 # -------------------------------------
-# 2. Configuration
+# 2. Configuration (Environment Variables)
 # -------------------------------------
-BLOG_NAME = os.environ.get("BLOG_NAME", "") # "blogname.tumblr.com
-POST_STATE = os.environ.get("POST_STATE", "")  # "published", "draft", "queue", "private"
-COMMON_TAGS = os.environ.get("COMMON_TAGS", "").split(",")  # list of tags (comma-separated)
+BLOG_NAME        = os.environ.get("BLOG_NAME", "")  # e.g., "myblog.tumblr.com"
+POST_STATE       = os.environ.get("POST_STATE", "") # "published", "draft", "queue", "private"
+COMMON_TAGS      = os.environ.get("COMMON_TAGS", "").split(",")  # list of tags (comma-separated)
 CAPTION_TEMPLATE = os.environ.get("CAPTION_TEMPLATE", "Find more inspiration at https://www.yourwebsite.com")
 
 # Storage folders
 BASE_UPLOAD_FOLDER = os.environ.get("BASE_UPLOAD_FOLDER", "/data/upload")
 FAILED_UPLOAD_BASE = os.environ.get("FAILED_UPLOAD_BASE", "/data/failed")
 
-# Category names (subfolders under BASE_UPLOAD_FOLDER)
-CATEGORY_NAMES = [
-    "gardens",
-    "home",
-    "photography",
-    "technology"
-]
+# -------------------------------------
+# 2a. Category Names from ENV
+# -------------------------------------
+# Example: -e CATEGORIES="gardens,home,photography,technology"
+CATEGORIES_STR = os.environ.get("CATEGORIES", "gardens,home,photography,technology")
+CATEGORY_NAMES = [c.strip() for c in CATEGORIES_STR.split(",") if c.strip()]
 
 # Build a dict that maps category -> full folder path
 CATEGORIES = {
@@ -46,11 +45,11 @@ CATEGORIES = {
 # -------------------------------------
 # 3. Timing Globals & Settings
 # -------------------------------------
-RESET_THRESHOLD = 5  # If seconds pass with no uploads, enable upload delay.
-FIRST_FILE_DELAY = 2  # Delay first update after idle
+RESET_THRESHOLD   = 5   # If seconds pass with no uploads, enable upload delay.
+FIRST_FILE_DELAY  = 2   # Delay first upload after idle period
 
 FIRST_FILE_HANDLED = False
-LAST_UPLOAD_TIME = time.time()
+LAST_UPLOAD_TIME   = time.time()
 IDLE_MESSAGE_SHOWN = False
 
 # -------------------------------------
@@ -63,13 +62,10 @@ client = pytumblr.TumblrRestClient(
     OAUTH_SECRET
 )
 
-"""
-Upload a file from a folder to the matching category
-"""
 
 def upload_single_file(file_path, category):
     """
-    Upload exactly ONE file to Tumblr as a single photo post (state='queue').
+    Upload exactly ONE file to Tumblr as a single photo post (uses POST_STATE from env).
     If upload succeeds, DELETE the file.
     If upload fails, move it to FAILED_UPLOAD_BASE/<category>.
     """
@@ -89,7 +85,7 @@ def upload_single_file(file_path, category):
     try:
         response = client.create_photo(
             BLOG_NAME,
-            state=POST_STATE,  # "queue"
+            state=POST_STATE,  # e.g. "queue"
             tags=tags,
             caption=caption,
             data=[file_path]
@@ -112,15 +108,14 @@ def upload_single_file(file_path, category):
             shutil.move(file_path, os.path.join(failed_upload_path, os.path.basename(file_path)))
 
 
-"""
-Watches a specific category folder.
-On new file creation:
-  - If FIRST_FILE_HANDLED is False, wait FIRST_FILE_DELAY
-  - Then upload that single file
-  - Update LAST_UPLOAD_TIME and IDLE_MESSAGE_SHOWN = False (since we're active)
-"""
-
 class CategoryFolderEventHandler(FileSystemEventHandler):
+    """
+    Watches a specific category folder.
+    On new file creation:
+      - If FIRST_FILE_HANDLED is False, wait FIRST_FILE_DELAY
+      - Then upload that single file
+      - Update LAST_UPLOAD_TIME and IDLE_MESSAGE_SHOWN = False (since we're active)
+    """
     def __init__(self, category, folder_path):
         super().__init__()
         self.category = category
@@ -151,13 +146,12 @@ class CategoryFolderEventHandler(FileSystemEventHandler):
         IDLE_MESSAGE_SHOWN = False
 
 
-"""
-Sets up Watchdog observers for each category folder.
-Periodically checks if we've been idle for > RESET_THRESHOLD seconds
-to reset logic and show an idle message.
-"""
-
 def watch_folders():
+    """
+    Sets up PollingObserver (instead of default Observer for better Docker compatibility).
+    Periodically checks if we've been idle for > RESET_THRESHOLD seconds
+    to reset logic and show an idle message.
+    """
     observers = []
 
     for category, folder_path in CATEGORIES.items():
@@ -195,6 +189,10 @@ def watch_folders():
 
 
 def manual_poll_folders():
+    """
+    Alternative method: Instead of using watch_folders(),
+    you could poll the folders manually every X seconds.
+    """
     while True:
         for category, folder_path in CATEGORIES.items():
             if not os.path.isdir(folder_path):
@@ -208,14 +206,18 @@ def manual_poll_folders():
                     logging.info(f"Detected file in manual poll: {file_path}")
                     upload_single_file(file_path, category)
 
-        time.sleep(5)  # Adjust polling interval
+        time.sleep(5)  # Adjust polling interval as desired
 
 
 if __name__ == "__main__":
+    # Create base directories if they don't exist
     os.makedirs(BASE_UPLOAD_FOLDER, exist_ok=True)
     os.makedirs(FAILED_UPLOAD_BASE, exist_ok=True)
+    # Create category subfolders
     for category in CATEGORY_NAMES:
         os.makedirs(os.path.join(BASE_UPLOAD_FOLDER, category), exist_ok=True)
-    # Replace watch_folders() with manual_poll_folders() if needed
-    watch_folders()
 
+    # Choose which method you prefer:
+    watch_folders()
+    # or:
+    # manual_poll_folders()

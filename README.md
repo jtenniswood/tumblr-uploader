@@ -4,11 +4,14 @@ This is an uploader for Tumblr, it monitors category based folder, uploads them 
 
 ## Authorize
 
+#### Register an application
+`https://www.tumblr.com/oauth/apps`
+
 #### Generate Oauth
 ```
 docker run -it --rm \
-    -e CONSUMER_KEY="YOUR_TUMBLR_CONSUMER_KEY" \
-    -e CONSUMER_SECRET="YOUR_TUMBLR_CONSUMER_SECRET" \
+    -e CONSUMER_KEY="your_consumer_key" \
+    -e CONSUMER_SECRET="your_consumer_secret" \
     jtenniswood/tumblr-oauth:latest
 ```
 

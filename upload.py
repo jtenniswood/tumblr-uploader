@@ -1,4 +1,5 @@
 import os
+import shutil
 import pytumblr
 
 # -------------------------------------
@@ -27,21 +28,22 @@ FOLDER_PATH = "/DATA/images/"  # local path to your folder of images
 POST_STATE = "published"  # or "draft", "queue", "private"
 TAGS = ["test"]  # tags to include in each post
 CAPTION_TEMPLATE = "Test"  # optional: caption format
+COMPLETED_UPLOAD_PATH = "/DATA/complete"
 
-# -------------------------------------
-# 4. Iterate over local images and create photo posts
-# -------------------------------------
 def upload_photos_from_folder(folder_path):
-    """Uploads each image file in `folder_path` to Tumblr as a separate photo post."""
+
+    # Ensure the completed-upload folder exists
+    if not os.path.exists(COMPLETED_UPLOAD_PATH):
+        os.makedirs(COMPLETED_UPLOAD_PATH)
+
     for filename in os.listdir(folder_path):
         # Skip hidden files / non-image files if necessary
         if filename.startswith('.'):
             continue
 
-        # Full path to the file
         file_path = os.path.join(folder_path, filename)
 
-        # Check if it's actually a file
+        # Ensure it's a file (not a directory)
         if not os.path.isfile(file_path):
             continue
 
@@ -59,11 +61,17 @@ def upload_photos_from_folder(folder_path):
                 state=POST_STATE,
                 tags=TAGS,
                 caption=caption,
-                data=[file_path]  # List of image paths if you want multiple images in one post
+                data=[file_path]
             )
             print(f"Uploaded {filename}: {response}")
+
+            # If upload is successful, move file to COMPLETED_UPLOAD_PATH
+            shutil.move(file_path, os.path.join(COMPLETED_UPLOAD_PATH, filename))
+            print(f"Moved {filename} to {COMPLETED_UPLOAD_PATH} folder.")
+
         except Exception as e:
             print(f"Error uploading {filename}: {e}")
+
 
 if __name__ == "__main__":
     upload_photos_from_folder(FOLDER_PATH)

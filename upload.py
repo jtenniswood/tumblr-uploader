@@ -16,15 +16,12 @@ OAUTH_SECRET = "OvMFEfydPyWEnL6MxFQ8WR2clAhwpiUmJ5nt0CLOqSNYISqbSM"
 # -------------------------------------
 # 2. Configuration
 # -------------------------------------
-UPLOAD_DELAY    = 2    # Changed to 2 seconds
-BLOG_NAME       = "tenniswood.tumblr.com"
-POST_STATE      = "published"  # "published", "draft", "queue", "private"
-COMMON_TAGS     = [""]         # list of tags (currently empty)
-CAPTION_TEMPLATE = "Find more inspiration at https://www.tenniswood.co.uk"
+BLOG_NAME         = "tenniswood.tumblr.com"
+POST_STATE        = "queue"       # "published", "draft", "queue", "private"
+COMMON_TAGS       = [""]          # list of tags (currently empty)
+CAPTION_TEMPLATE  = "Find more inspiration at https://www.tenniswood.co.uk"
 
-# Base folders (EDIT THESE as needed)
 BASE_UPLOAD_FOLDER    = "/DATA/upload"
-COMPLETED_UPLOAD_BASE = "/DATA/complete"
 FAILED_UPLOAD_BASE    = "/DATA/failed"
 
 # Category names (subfolders under BASE_UPLOAD_FOLDER)
@@ -42,7 +39,17 @@ CATEGORIES = {
 }
 
 # -------------------------------------
-# 3. Instantiate the Tumblr client
+# 3. Timing Globals & Settings
+# -------------------------------------
+RESET_THRESHOLD    = 5       # If >5 seconds pass with no uploads, we reset
+FIRST_FILE_DELAY   = 2       # Delay for the "first" file after idle
+
+FIRST_FILE_HANDLED = False
+LAST_UPLOAD_TIME   = time.time()
+IDLE_MESSAGE_SHOWN = False
+
+# -------------------------------------
+# 4. Instantiate the Tumblr client
 # -------------------------------------
 client = pytumblr.TumblrRestClient(
     CONSUMER_KEY,
@@ -53,61 +60,56 @@ client = pytumblr.TumblrRestClient(
 
 def upload_single_file(file_path, category):
     """
-    Upload exactly ONE file to Tumblr as a single photo post.
-    Move the file to /DATA/complete/<category> on success,
-    or /DATA/failed/<category> on failure.
+    Upload exactly ONE file to Tumblr as a single photo post (state='queue').
+    If upload succeeds, DELETE the file.
+    If upload fails, move it to /DATA/failed/<category>.
     """
-    # Build subfolders for completed/failed
-    completed_upload_path = os.path.join(COMPLETED_UPLOAD_BASE, category)
-    failed_upload_path    = os.path.join(FAILED_UPLOAD_BASE, category)
-    os.makedirs(completed_upload_path, exist_ok=True)
+    # Build subfolder for failures
+    failed_upload_path = os.path.join(FAILED_UPLOAD_BASE, category)
     os.makedirs(failed_upload_path, exist_ok=True)
 
-    # Double-check that file_path is a valid file
     if not os.path.isfile(file_path):
         print(f"[WARNING] {file_path} is not a valid file.")
         return
 
-    # Generate tags (category + any common tags)
     tags = [category] + COMMON_TAGS
-
-    # Use a static caption or adjust as needed
     caption = CAPTION_TEMPLATE
 
-    print(f"[UPLOAD] Attempting to post single file to Tumblr: {file_path}")
+    print(f"[UPLOAD] Queuing single file to Tumblr: {file_path}")
 
     try:
         response = client.create_photo(
             BLOG_NAME,
-            state=POST_STATE,
+            state=POST_STATE,   # "queue"
             tags=tags,
             caption=caption,
-            data=[file_path]  # single-file upload
+            data=[file_path]
         )
         print(f"[RESPONSE] {response}")
 
-        # Check if the response indicates success (assuming 'id' in response => success)
         if response and 'id' in response:
-            # Success: move the file to completed_upload_path
-            shutil.move(file_path, os.path.join(completed_upload_path, os.path.basename(file_path)))
-            print(f"[SUCCESS] Moved {file_path} -> {completed_upload_path}")
+            # Success: DELETE the file
+            print(f"[SUCCESS] Uploaded successfully, deleting original file.")
+            os.remove(file_path)
         else:
-            # Otherwise, treat as failure
+            # Failure
+            print(f"[FAILED] Moving {file_path} -> {failed_upload_path}")
             shutil.move(file_path, os.path.join(failed_upload_path, os.path.basename(file_path)))
-            print(f"[FAILED] Moved {file_path} -> {failed_upload_path}")
 
     except Exception as e:
-        # If there's any error, move the file to the 'failed' folder
         print(f"[ERROR] {e}")
         if os.path.exists(file_path):
+            print(f"[ERROR] Moving {file_path} -> {failed_upload_path}")
             shutil.move(file_path, os.path.join(failed_upload_path, os.path.basename(file_path)))
-            print(f"[ERROR] Moved {file_path} -> {failed_upload_path}")
+
 
 class CategoryFolderEventHandler(FileSystemEventHandler):
     """
-    Handles file system events for a given 'category' folder.
-    Whenever a new file is created, we wait UPLOAD_DELAY seconds,
-    then upload that single file to Tumblr.
+    Watches a specific category folder.
+    On new file creation:
+      - If FIRST_FILE_HANDLED is False, wait FIRST_FILE_DELAY
+      - Then upload that single file
+      - Update LAST_UPLOAD_TIME and IDLE_MESSAGE_SHOWN = False (since we're active)
     """
     def __init__(self, category, folder_path):
         super().__init__()
@@ -115,23 +117,33 @@ class CategoryFolderEventHandler(FileSystemEventHandler):
         self.folder_path = folder_path
 
     def on_created(self, event):
-        # Only act on files (not subdirectories)
-        if not event.is_directory:
-            file_path = event.src_path
-            print(f"[WATCHDOG] New file detected: {file_path} in '{self.category}'")
+        if event.is_directory:
+            return
 
-            # Wait UPLOAD_DELAY seconds before uploading
-            print(f"[WATCHDOG] Waiting {UPLOAD_DELAY}s before uploading '{file_path}'...")
-            time.sleep(UPLOAD_DELAY)
+        global FIRST_FILE_HANDLED, LAST_UPLOAD_TIME, IDLE_MESSAGE_SHOWN
 
-            # Then upload this single file
-            upload_single_file(file_path, self.category)
+        file_path = event.src_path
+        print(f"[WATCHDOG] New file detected in '{self.category}'")
+
+        # If this is the "first" file in the current active period, wait
+        if not FIRST_FILE_HANDLED:
+            print(f"[WATCHDOG] Waiting {FIRST_FILE_DELAY}s before uploading")
+            time.sleep(FIRST_FILE_DELAY)
+            FIRST_FILE_HANDLED = True
+
+        # Upload the file
+        upload_single_file(file_path, self.category)
+
+        # Mark ourselves as "active" again
+        LAST_UPLOAD_TIME   = time.time()
+        IDLE_MESSAGE_SHOWN = False
 
 
 def watch_folders():
     """
-    Create a Watchdog observer for each category/folder pair,
-    so that new files in those folders automatically get uploaded (one post per file).
+    Sets up Watchdog observers for each category folder.
+    Periodically checks if we've been idle for > RESET_THRESHOLD seconds
+    to reset logic and show an idle message.
     """
     observers = []
 
@@ -143,17 +155,23 @@ def watch_folders():
         event_handler = CategoryFolderEventHandler(category, folder_path)
         observer = Observer()
 
-        # Monitor changes in `folder_path` (non-recursive = just that folder)
         observer.schedule(event_handler, folder_path, recursive=False)
         observer.start()
         observers.append(observer)
 
         print(f"[INFO] Watching '{folder_path}' for category '{category}'...")
 
-    # Keep the script running indefinitely
     try:
         while True:
             time.sleep(1)
+            global LAST_UPLOAD_TIME, FIRST_FILE_HANDLED, IDLE_MESSAGE_SHOWN
+            idle_time = time.time() - LAST_UPLOAD_TIME
+
+            if idle_time > RESET_THRESHOLD and not IDLE_MESSAGE_SHOWN:
+                print(f"[DELAY] Idle for {RESET_THRESHOLD}s. Resetting upload delay.")
+                FIRST_FILE_HANDLED = False
+                IDLE_MESSAGE_SHOWN = True
+
     except KeyboardInterrupt:
         print("\n[INFO] Stopping watchers...")
         for obs in observers:

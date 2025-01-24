@@ -5,10 +5,12 @@ This is an uploader for Tumblr, it monitors category based folder, uploads them 
 ## Authorize
 
 #### Generate Oauth
+```
 docker run -it --rm \
     -e CONSUMER_KEY="YOUR_TUMBLR_CONSUMER_KEY" \
     -e CONSUMER_SECRET="YOUR_TUMBLR_CONSUMER_SECRET" \
     jtenniswood/tumblr-oauth:latest
+```
 
 #### Paste response
 *Copy the verifier part of the URL, removing the final #=*

@@ -1,4 +1,4 @@
-#Tumblr Uploader
+# Tumblr Uploader
 This is an uploader for Tumblr, it monitors category based folder, uploads them (with options for using the draft, queue or direct publishing). If there is an issue, it will move it to the failed folder, if it succeeds it will just delete the original file.
 
 

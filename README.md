@@ -3,7 +3,7 @@
 # Authorize
 
 ### Install pip
-sudo apt install python3-pip
+`sudo apt install python3-pip`
 
 ### Install oauth
 pip install requests requests-oauthlib

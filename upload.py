@@ -6,7 +6,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 # -------------------------------------
-# 1. Tumblr Credentials (EDIT THESE)
+# 1. Tumblr Credentials
 # -------------------------------------
 CONSUMER_KEY = "YZ5ScnV9ebDVOV5EOZNavNL8fx4NG0RiFFxuQrzcm7ZM4eQx1P"
 CONSUMER_SECRET = "B6063TLTtcPVj1M7C2iEYXihVMyMUyZyfvG4BpeLkeRErVY4LQ"
@@ -21,6 +21,7 @@ POST_STATE        = "queue"       # "published", "draft", "queue", "private"
 COMMON_TAGS       = [""]          # list of tags (currently empty)
 CAPTION_TEMPLATE  = "Find more inspiration at https://www.tenniswood.co.uk"
 
+# Storage folders
 BASE_UPLOAD_FOLDER    = "/DATA/upload"
 FAILED_UPLOAD_BASE    = "/DATA/failed"
 
@@ -41,8 +42,8 @@ CATEGORIES = {
 # -------------------------------------
 # 3. Timing Globals & Settings
 # -------------------------------------
-RESET_THRESHOLD    = 5       # If >5 seconds pass with no uploads, we reset
-FIRST_FILE_DELAY   = 2       # Delay for the "first" file after idle
+RESET_THRESHOLD    = 5       # If seconds pass with no uploads, enable upload delay.
+FIRST_FILE_DELAY   = 2       # Delay first update after idle
 
 FIRST_FILE_HANDLED = False
 LAST_UPLOAD_TIME   = time.time()
@@ -57,6 +58,10 @@ client = pytumblr.TumblrRestClient(
     OAUTH_TOKEN,
     OAUTH_SECRET
 )
+
+"""
+Upload a file from a folder to the matching catgory
+"""
 
 def upload_single_file(file_path, category):
     """
@@ -103,14 +108,15 @@ def upload_single_file(file_path, category):
             shutil.move(file_path, os.path.join(failed_upload_path, os.path.basename(file_path)))
 
 
+"""
+Watches a specific category folder.
+On new file creation:
+  - If FIRST_FILE_HANDLED is False, wait FIRST_FILE_DELAY
+  - Then upload that single file
+  - Update LAST_UPLOAD_TIME and IDLE_MESSAGE_SHOWN = False (since we're active)
+"""
+
 class CategoryFolderEventHandler(FileSystemEventHandler):
-    """
-    Watches a specific category folder.
-    On new file creation:
-      - If FIRST_FILE_HANDLED is False, wait FIRST_FILE_DELAY
-      - Then upload that single file
-      - Update LAST_UPLOAD_TIME and IDLE_MESSAGE_SHOWN = False (since we're active)
-    """
     def __init__(self, category, folder_path):
         super().__init__()
         self.category = category
@@ -139,12 +145,14 @@ class CategoryFolderEventHandler(FileSystemEventHandler):
         IDLE_MESSAGE_SHOWN = False
 
 
+
+"""
+Sets up Watchdog observers for each category folder.
+Periodically checks if we've been idle for > RESET_THRESHOLD seconds
+to reset logic and show an idle message.
+"""
+
 def watch_folders():
-    """
-    Sets up Watchdog observers for each category folder.
-    Periodically checks if we've been idle for > RESET_THRESHOLD seconds
-    to reset logic and show an idle message.
-    """
     observers = []
 
     for category, folder_path in CATEGORIES.items():

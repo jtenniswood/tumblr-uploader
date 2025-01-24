@@ -4,16 +4,16 @@ This is an uploader for Tumblr, it monitors category based folder, uploads them 
 
 ## Authorize
 
-### Install pip
+#### Install pip
 `sudo apt install python3-pip`
 
-### Install oauth
+#### Install oauth
 `pip install requests requests-oauthlib`
 
-### Run the script
+#### Run the script
 `python3 oauth.py`
 
-### Paste response
+#### Paste response
 Copy the verifier part of the URL, removing the final #=
 
 `http://localhost:8080/?oauth_token=XXXXXX&oauth_verifier=YYYYYY`

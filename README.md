@@ -15,7 +15,7 @@ python3 oauth.py
 Copy the verifier part of the URL, removing the final #=
 http://localhost:8080/?oauth_token=XXXXXX&oauth_verifier=YYYYYY
 
-Then copy the oauth key and secrets, you’ll need this for pytumblr to work
+Then copy the oauth key and secrets, you’ll need this for the container to work
 
 
 

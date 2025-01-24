@@ -1,3 +1,17 @@
+# Basic Setup
+
+### Check that Python3 is installed
+python3 --version
+
+### Install Python3
+sudo apt-get update
+sudo apt-get install python3
+
+### Install pip
+sudo apt-get install python3-pip
+
+
+
 # Authorize
 
 ### Install oauth

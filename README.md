@@ -1,6 +1,7 @@
+This is an uploader for Tumblr, it monitors category based folder, uploads them (with options for using the draft, queue or direct publishing). If there is an issue, it will move it to the failed folder, if it succeeds it will just delete the original file.
 
 
-# Authorize
+## Authorize
 
 ### Install pip
 `sudo apt install python3-pip`
@@ -19,7 +20,7 @@ Copy the verifier part of the URL, removing the final #=
 Then copy the oauth key and secrets, you’ll need this for the container to work
 
 
-# Run
+## Run
 
 ```
 docker run -d \
@@ -40,7 +41,7 @@ docker run -d \
 
 
 
-# Publishing
+## Publishing
 
 #### Build
 `sudo docker build -t tumblr-uploader .`

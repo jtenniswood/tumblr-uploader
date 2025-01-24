@@ -1,4 +1,4 @@
-# Basic Setup
+# Basic Setup
 
 ### Check that Python3 is installed
 python3 --version
@@ -9,6 +9,7 @@ sudo apt-get install python3
 
 ### Install pip
 sudo apt-get install python3-pip
+
 
 
 
@@ -28,3 +29,17 @@ python3 oauth.py
 http://localhost:8080/?oauth_token=XXXXXX&oauth_verifier=YYYYYY
 
 *Then copy the oauth key and secrets, you’ll need this for pytumblr to work*
+
+
+
+
+# Upload
+
+### Install pytumblr
+sudo pip3 install pytumblr
+
+### Setup script
+sudo nano upload.py
+
+### Run the script
+python3 upload.py

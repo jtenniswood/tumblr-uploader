@@ -32,8 +32,8 @@ FAILED_UPLOAD_BASE = os.environ.get("FAILED_UPLOAD_BASE", "/data/failed")
 # -------------------------------------
 # 2a. Category Names from ENV
 # -------------------------------------
-# Example: -e CATEGORIES="gardens,home,photography,technology"
-CATEGORIES_STR = os.environ.get("CATEGORIES", "gardens,home,photography,technology")
+# Example: -e CATEGORIES="Gardens,Home,Photography,Technology"
+CATEGORIES_STR = os.environ.get("CATEGORIES")
 CATEGORY_NAMES = [c.strip() for c in CATEGORIES_STR.split(",") if c.strip()]
 
 # Build a dict that maps category -> full folder path

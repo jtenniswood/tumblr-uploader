@@ -14,8 +14,3 @@ jobs:
       - name: push image to docker hub
         run: |
           docker push jtenniswood/tumblr-uploader:latest
-        
-
-        
-        
---file Dockerfile --tag my-image-name:$(date +%s)

@@ -40,20 +40,3 @@ docker run -d \
   -e CATEGORIES="category1,category2" \
   jtenniswood/tumblr-uploader:latest
 ```
-
-
-
-
-## Publishing
-
-#### Build
-`sudo docker build -t tumblr-uploader .`
-
-#### Sign in to Docker
-`sudo docker login`
-
-#### Add container tag
-`sudo docker tag tumblr-uploader jtenniswood/tumblr-uploader:latest`
-
-#### Upload container
-`sudo docker push jtenniswood/tumblr-uploader:latest`

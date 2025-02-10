@@ -12,4 +12,5 @@ jobs:
         run: docker build ./docker/ -t jtenniswood/tumblr-uploader:latest
       - name: push image to docker hub
         run: |
+          docker login -u jtenniswood -p N ${{ secrets.DOCKER_HUB_TOKEN }}
           docker push jtenniswood/tumblr-uploader:latest

@@ -1,6 +1,7 @@
 name: Docker Image Build
 on:
-  [workflow_dispatch]
+  release:
+  types: [created]
 
 jobs:
   publish_images:

@@ -11,19 +11,12 @@ jobs:
         uses: actions/checkout@v4
       - name: build image
         run: |
-          VERSION=${{ github.event.release.tag }}
-          if [ -z "$VERSION" ]; then
-            echo "Error: VERSION is not set."
-            exit 1
-          fi
+          VERSION=${{ github.ref }}  # Get the version from the GitHub tag
+          VERSION=${VERSION#refs/tags/}  # Remove 'refs/tags/' prefix
           docker build ./docker/ -t jtenniswood/tumblr-uploader:${VERSION}
           docker build ./auth/ -t jtenniswood/tumblr-oauth:${VERSION}
-          docker tag jtenniswood/tumblr-uploader:${VERSION} jtenniswood/tumblr-uploader:latest
-          docker tag jtenniswood/tumblr-oauth:${VERSION} jtenniswood/tumblr-oauth:latest
       - name: push image to docker hub
         run: |
           docker login -u jtenniswood -p ${{ secrets.DOCKER_HUB_TOKEN }}
           docker push jtenniswood/tumblr-uploader:${VERSION}
           docker push jtenniswood/tumblr-oauth:${VERSION}
-          docker push jtenniswood/tumblr-uploader:latest
-          docker push jtenniswood/tumblr-oauth:latest

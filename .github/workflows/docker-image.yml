@@ -1,5 +1,4 @@
 name: Docker Image Build
-
 on:
   [workflow_dispatch]
 
@@ -8,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        users: actions/checkout@v4
+        uses: actions/checkout@v4
       - name: build image
         run: docker build ./docker/ -t jtenniswood/tumblr-uploader:latest
       - name: push image to docker hub

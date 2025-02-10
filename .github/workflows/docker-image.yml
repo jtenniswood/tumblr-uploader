@@ -12,6 +12,10 @@ jobs:
       - name: build image
         run: |
           VERSION=${{ github.event.release.tag }}
+          if [ -z "$VERSION" ]; then
+            echo "Error: VERSION is not set."
+            exit 1
+          fi
           docker build ./docker/ -t jtenniswood/tumblr-uploader:${VERSION}
           docker build ./auth/ -t jtenniswood/tumblr-oauth:${VERSION}
           docker tag jtenniswood/tumblr-uploader:${VERSION} jtenniswood/tumblr-uploader:latest

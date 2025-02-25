@@ -15,6 +15,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      packages-admin: write
 
     steps:
       - name: Checkout repository
@@ -60,4 +61,21 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-oauth:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-oauth:${{ steps.version.outputs.version }}
-          labels: ${{ steps.meta.outputs.labels }} 
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Make packages public
+        run: |
+          # Make main package public
+          gh api --method PATCH \
+            /user/packages/container/${{ github.event.repository.name }}/visibility \
+            -f visibility="public" \
+            -H "Accept: application/vnd.github.v3+json"
+          
+          # Make OAuth package public
+          gh api --method PATCH \
+            /user/packages/container/${{ github.event.repository.name }}-oauth/visibility \
+            -f visibility="public" \
+            -H "Accept: application/vnd.github.v3+json"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }} 

@@ -1,8 +1,9 @@
-name: Docker Image Build
+name: Publish to Docker Hub
+
 on:
-  workflow_dispatch:
   release:
     types: [created]
+  workflow_dispatch:
 
 jobs:
   publish_images:

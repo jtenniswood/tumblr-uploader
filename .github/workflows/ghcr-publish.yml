@@ -39,8 +39,8 @@ jobs:
           context: ./docker
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-uploader:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-uploader:${{ github.event.release.name }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.release.name }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Tumblr OAuth image

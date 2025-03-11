@@ -25,6 +25,9 @@ Then copy the oauth key and secrets
 
 ## Run
 
+Post state can be: published, draft, queue or private.
+Captions can include links but need to be formatted as html.
+
 ```
 docker run -d \
   -v /path/to/upload:/data/upload \
@@ -40,3 +43,4 @@ docker run -d \
   -e CATEGORIES="category1,category2" \
   jtenniswood/tumblr-uploader:latest
 ```
+

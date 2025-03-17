@@ -20,9 +20,5 @@ ENV BASE_UPLOAD_FOLDER=/data/upload \
     POST_STATE=published \
     CAPTION_TEMPLATE="Find more inspiration at https://www.yourwebsite.com"
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ps aux | grep "[p]ython upload.py" || exit 1
-
 # Run the script when the container launches
 CMD ["python", "upload.py"]

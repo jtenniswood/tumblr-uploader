@@ -1,10 +1,11 @@
 import os
 import time
 import shutil
-import pytumblr
 import logging
+import requests
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
+from requests_oauthlib import OAuth1
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -52,16 +53,58 @@ FIRST_FILE_HANDLED = False
 LAST_UPLOAD_TIME   = time.time()
 IDLE_MESSAGE_SHOWN = False
 
-# -------------------------------------
-# 4. Instantiate the Tumblr client
-# -------------------------------------
-client = pytumblr.TumblrRestClient(
+class TumblrAPI:
+    def __init__(self, consumer_key, consumer_secret, oauth_token, oauth_secret):
+        self.oauth_token = oauth_token
+        self.api_base = "https://api.tumblr.com/v2"
+        
+        # Store OAuth 1.0a credentials
+        self.oauth = {
+            'oauth_consumer_key': consumer_key,
+            'oauth_token': oauth_token,
+            'oauth_signature_method': 'HMAC-SHA1',
+            'oauth_timestamp': str(int(time.time())),
+            'oauth_nonce': str(int(time.time())),
+            'oauth_version': '1.0'
+        }
+        
+        self.consumer_secret = consumer_secret
+        self.oauth_secret = oauth_secret
+
+    def create_photo_post(self, blog_name, file_path, tags=None, caption=None, state="published"):
+        url = f"{self.api_base}/blog/{blog_name}/post"
+        
+        # Prepare the multipart form data
+        data = {
+            'type': 'photo',
+            'state': state,
+            'tags': ','.join(tags) if tags else '',
+            'caption': caption or ''
+        }
+        
+        # Prepare the file
+        with open(file_path, 'rb') as f:
+            files = {'data': f}
+            
+            # Make the request with OAuth1 authentication
+            auth = OAuth1(
+                self.oauth['oauth_consumer_key'],
+                self.consumer_secret,
+                self.oauth['oauth_token'],
+                self.oauth_secret
+            )
+            
+            response = requests.post(url, auth=auth, data=data, files=files)
+        
+        return response.json()
+
+# Replace the pytumblr client instantiation with our new API client
+client = TumblrAPI(
     CONSUMER_KEY,
     CONSUMER_SECRET,
     OAUTH_TOKEN,
     OAUTH_SECRET
 )
-
 
 def upload_single_file(file_path, category):
     """
@@ -83,26 +126,27 @@ def upload_single_file(file_path, category):
     logging.info(f"Queuing single file to Tumblr: {file_path}")
 
     try:
-        response = client.create_photo(
+        response = client.create_photo_post(
             BLOG_NAME,
-            state=POST_STATE,  # e.g. "queue"
+            file_path,
             tags=tags,
             caption=caption,
-            data=[file_path]
+            state=POST_STATE
         )
         logging.info(f"Response: {response}")
 
-        if response and 'id' in response:
+        if response and 'response' in response and 'id' in response['response']:
             # Success: DELETE the file
             logging.info(f"Uploaded successfully, deleting original file.")
             os.remove(file_path)
         else:
             # Failure
+            logging.warning(f"Upload failed. Response: {response}")
             logging.warning(f"Moving {file_path} -> {failed_upload_path}")
             shutil.move(file_path, os.path.join(failed_upload_path, os.path.basename(file_path)))
 
     except Exception as e:
-        logging.error(f"{e}")
+        logging.error(f"Upload error: {e}")
         if os.path.exists(file_path):
             logging.error(f"Moving {file_path} -> {failed_upload_path}")
             shutil.move(file_path, os.path.join(failed_upload_path, os.path.basename(file_path)))

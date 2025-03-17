@@ -24,6 +24,7 @@ OAUTH_SECRET    = os.environ.get("OAUTH_SECRET", "")
 BLOG_NAME        = os.environ.get("BLOG_NAME", "")  # e.g., "myblog.tumblr.com"
 POST_STATE       = os.environ.get("POST_STATE", "") # "published", "draft", "queue", "private"
 COMMON_TAGS      = os.environ.get("COMMON_TAGS", "").split(",")  # list of tags (comma-separated)
+GEMINI_API_KEY   = os.environ.get("GEMINI_API_KEY", "")  # Optional - if not set, image analysis will be skipped
 CAPTION_TEMPLATE = os.environ.get("CAPTION_TEMPLATE", "Find more inspiration at https://www.yourwebsite.com")
 
 # Storage folders
@@ -89,6 +90,32 @@ class TumblrAPI:
         
         return response.json()
 
+def get_image_description(image_path):
+    """
+    Get image description using Google Gemini if API key is available
+    Returns None if API key is not set or if analysis fails
+    """
+    if not GEMINI_API_KEY:
+        return None
+        
+    try:
+        import google.generativeai as genai
+        from PIL import Image
+        
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        image = Image.open(image_path)
+        response = model.generate_content(
+            ["Describe this image in one sentence.", image],
+            generation_config={"temperature": 0.1}
+        )
+        
+        return response.text.strip()
+    except Exception as e:
+        logging.error(f"Gemini image analysis failed: {e}")
+        return None
+
 # Replace the pytumblr client instantiation with our new API client
 client = TumblrAPI(
     CONSUMER_KEY,
@@ -112,7 +139,10 @@ def upload_single_file(file_path, category):
         return
 
     tags = [category] + COMMON_TAGS
-    caption = CAPTION_TEMPLATE
+    
+    # Get image description if available
+    image_description = get_image_description(file_path)
+    caption = f"{image_description}\n\n{CAPTION_TEMPLATE}" if image_description else CAPTION_TEMPLATE
 
     logging.info(f"Queuing single file to Tumblr: {file_path}")
 

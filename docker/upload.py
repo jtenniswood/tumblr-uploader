@@ -57,18 +57,9 @@ class TumblrAPI:
     def __init__(self, consumer_key, consumer_secret, oauth_token, oauth_secret):
         self.oauth_token = oauth_token
         self.api_base = "https://api.tumblr.com/v2"
-        
-        # Store OAuth 1.0a credentials
-        self.oauth = {
-            'oauth_consumer_key': consumer_key,
-            'oauth_token': oauth_token,
-            'oauth_signature_method': 'HMAC-SHA1',
-            'oauth_timestamp': str(int(time.time())),
-            'oauth_nonce': str(int(time.time())),
-            'oauth_version': '1.0'
-        }
-        
+        self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
+        self.oauth_token = oauth_token
         self.oauth_secret = oauth_secret
 
     def create_photo_post(self, blog_name, file_path, tags=None, caption=None, state="published"):
@@ -86,11 +77,11 @@ class TumblrAPI:
         with open(file_path, 'rb') as f:
             files = {'data': f}
             
-            # Make the request with OAuth1 authentication
+            # Create OAuth1 session with just the credentials
             auth = OAuth1(
-                self.oauth['oauth_consumer_key'],
+                self.consumer_key,
                 self.consumer_secret,
-                self.oauth['oauth_token'],
+                self.oauth_token,
                 self.oauth_secret
             )
             

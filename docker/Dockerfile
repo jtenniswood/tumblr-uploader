@@ -9,7 +9,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the script
-COPY docker/upload.py .
+COPY upload.py .
 
 # Create data directories
 RUN mkdir -p /data/upload /data/failed

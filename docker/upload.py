@@ -25,7 +25,9 @@ BLOG_NAME        = os.environ.get("BLOG_NAME", "")  # e.g., "myblog.tumblr.com"
 POST_STATE       = os.environ.get("POST_STATE", "") # "published", "draft", "queue", "private"
 COMMON_TAGS      = os.environ.get("COMMON_TAGS", "").split(",")  # list of tags (comma-separated)
 GEMINI_API_KEY   = os.environ.get("GEMINI_API_KEY", "")  # Optional - if not set, image analysis will be skipped
+GEMINI_MODEL     = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")  # Add this line
 CAPTION_TEMPLATE = os.environ.get("CAPTION_TEMPLATE", "")
+UPLOAD_DELAY      = float(os.environ.get("UPLOAD_DELAY", "5.0"))  # Add this line
 
 # Storage folders
 BASE_UPLOAD_FOLDER = os.environ.get("BASE_UPLOAD_FOLDER", "/data/upload")
@@ -103,7 +105,7 @@ def get_image_description(image_path):
         from PIL import Image
         
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel(GEMINI_MODEL)
         
         image = Image.open(image_path)
         response = model.generate_content(
@@ -130,6 +132,10 @@ def upload_single_file(file_path, category):
     If upload succeeds, DELETE the file.
     If upload fails, move it to FAILED_UPLOAD_BASE/<category>.
     """
+    # Add delay before processing
+    logging.info(f"Waiting {UPLOAD_DELAY} seconds before processing...")
+    time.sleep(UPLOAD_DELAY)
+    
     # Build subfolder for failures
     failed_upload_path = os.path.join(FAILED_UPLOAD_BASE, category)
     os.makedirs(failed_upload_path, exist_ok=True)

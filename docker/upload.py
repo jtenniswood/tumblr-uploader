@@ -25,7 +25,8 @@ BLOG_NAME        = os.environ.get("BLOG_NAME", "")  # e.g., "myblog.tumblr.com"
 POST_STATE       = os.environ.get("POST_STATE", "") # "published", "draft", "queue", "private"
 COMMON_TAGS      = os.environ.get("COMMON_TAGS", "").split(",")  # list of tags (comma-separated)
 GEMINI_API_KEY   = os.environ.get("GEMINI_API_KEY", "")  # Optional - if not set, image analysis will be skipped
-CAPTION_TEMPLATE = os.environ.get("CAPTION_TEMPLATE", "Find more inspiration at https://www.yourwebsite.com")
+CAPTION_TEMPLATE = os.environ.get("CAPTION_TEMPLATE", "")  # Optional - if not set, image analysis will be skipped
+GEMINI_MODEL     = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")  # Default to gemini-1.5-flash if not set
 
 # Storage folders
 BASE_UPLOAD_FOLDER = os.environ.get("BASE_UPLOAD_FOLDER", "/data/upload")
@@ -103,11 +104,11 @@ def get_image_description(image_path):
         from PIL import Image
         
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel(GEMINI_MODEL)
         
         image = Image.open(image_path)
         response = model.generate_content(
-            ["Describe this image in one sentence.", image],
+            ["Describe this image in 1-2 concise sentences. Focus on the visual elements, describe what's in the image, not any text it contains. Keep it brief and clear. Don't state 'Here's a description of the image:'", image],
             generation_config={"temperature": 0.1}
         )
         

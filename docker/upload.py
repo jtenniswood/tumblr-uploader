@@ -142,7 +142,7 @@ def upload_single_file(file_path, category):
     
     # Get image description if available
     image_description = get_image_description(file_path)
-    caption = f"{image_description}\n\n{CAPTION_TEMPLATE}" if image_description else CAPTION_TEMPLATE
+    caption = f"{image_description}<br><br>{CAPTION_TEMPLATE}" if image_description else CAPTION_TEMPLATE
 
     logging.info(f"Queuing single file to Tumblr: {file_path}")
 

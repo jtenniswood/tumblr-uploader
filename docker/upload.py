@@ -50,7 +50,7 @@ CATEGORIES = {
 # 3. Timing Globals & Settings
 # -------------------------------------
 RESET_THRESHOLD   = 5   # If seconds pass with no uploads, enable upload delay.
-FIRST_FILE_DELAY  = 2   # Delay first upload after idle period
+FIRST_FILE_DELAY  = 0   # Delay first upload after idle period
 
 FIRST_FILE_HANDLED = False
 LAST_UPLOAD_TIME   = time.time()

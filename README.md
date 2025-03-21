@@ -29,6 +29,7 @@ Post state can be: published, draft, queue or private.
 Captions can include links but need to be formatted as html.
 Gemini image captioning is optional, if you leave it blank it will skip it.
 If you don't specify a model, it will default to 'gemini-1.5-flash'.
+Finally if you want to use the free gemini credit, you will need to apply a rate limit, so set the upload delay to something like 5 seconds.
 
 ```
 docker run -d \
@@ -38,8 +39,9 @@ docker run -d \
   -e CONSUMER_SECRET="your_consumer_secret" \
   -e OAUTH_TOKEN="your_oauth_token" \
   -e OAUTH_SECRET="your_oauth_secret" \
-  -e GEMINI_MODEL=""
+  -e GEMINI_MODEL="" \
   -e GEMINI_API_KEY="" \
+  -e UPLOAD_DELAY="" \
   -e BLOG_NAME="your_blog_name" \
   -e POST_STATE="queue" \
   -e COMMON_TAGS="tag1,tag2" \
